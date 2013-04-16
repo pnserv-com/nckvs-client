@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import json
-import urllib2
 from contextlib import closing
+
+try:
+    from urllib import request
+except ImportError:
+    import urllib2 as request
+
 
 _config = {}
 _system_param = {}
@@ -65,8 +70,8 @@ def _request(url, param):
         'Content-type': 'application/json',
         'Content-length': len(data)
     }
-    req = urllib2.Request(url, data, headers)
-    with closing(urllib2.urlopen(req)) as res:
+    req = request.Request(url, data, headers)
+    with closing(request.urlopen(req)) as res:
         result = json.load(res)
         if result['code'] == '200':
             return result

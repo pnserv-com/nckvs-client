@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from StringIO import StringIO
-
 import pytest
 from mock import patch, call
 
 import nckvsclient as nckvs
+
+try:
+    from urllib import request
+except ImportError:
+    import urllib2 as request
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 
 BASE_URL = 'http://example.com'
 
@@ -70,7 +79,7 @@ def test_search(_request, system_param):
     })
 
 
-@patch('urllib2.urlopen')
+@patch.object(request, 'urlopen')
 def test_request(urlopen):
     urlopen.return_value = StringIO('{"code":"200"}')
     res = nckvs._request(BASE_URL, {'key': 'value'})
@@ -83,7 +92,7 @@ def test_request(urlopen):
     }
 
 
-@patch('urllib2.urlopen')
+@patch.object(request, 'urlopen')
 def test_request_error(urlopen):
     urlopen.return_value = StringIO('{"code":"400","message":"invalid"}')
     with pytest.raises(nckvs.RPCError):
