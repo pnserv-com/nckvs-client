@@ -19,10 +19,13 @@ class RPCError(Exception):
 
 
 class KVSClient(object):
-    def __init__(self, base_url, login_name, login_pass, **kwargs):
+    def __init__(self, base_url, login_name, login_pass, datatypename,
+                 datatypeversion=1, **kwargs):
         self.config = dict(base_url=base_url,
                            login_name=login_name,
                            login_pass=login_pass,
+                           datatypename=datatypename,
+                           datatypeversion=datatypeversion,
                            **kwargs)
         self.system_param = {}
 
@@ -36,8 +39,8 @@ class KVSClient(object):
             'system': self.system_param,
             'query': {
                 'datalist': items,
-                'datatypename': 'commonstest1',
-                'datatypeversion': 1
+                'datatypename': self.config['datatypename'],
+                'datatypeversion': self.config['datatypeversion']
             }
         }
         return self._request(url, param)
@@ -47,7 +50,7 @@ class KVSClient(object):
         param = {
             'system': self.system_param,
             'query': {
-                'datatypename': 'commonstest1',
+                'datatypename': self.config['datatypename'],
                 'dataversion': '*',
                 'limit': 0,
                 'sortorder': [],

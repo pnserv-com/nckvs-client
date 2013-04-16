@@ -30,7 +30,8 @@ def pytest_funcarg__system_param(request):
 
 
 def pytest_funcarg__client(request):
-    return nckvs.KVSClient(BASE_URL, 'user', 'pass', app_servername='appname',
+    return nckvs.KVSClient(BASE_URL, 'user', 'pass', 'testtype',
+                           datatypeversion=2, app_servername='appname',
                            app_username='appuser', timezone='')
 
 
@@ -42,9 +43,15 @@ class TestKVSClient(object):
             'login_pass': 'pass',
             'app_servername': 'appname',
             'app_username': 'appuser',
-            'timezone': ''
+            'timezone': '',
+            'datatypename': 'testtype',
+            'datatypeversion': 2
         }
         assert client.system_param == system_param
+
+    def test_init2(self):
+        client = nckvs.KVSClient(BASE_URL, 'user', 'pass', 'testtype')
+        assert client.config['datatypeversion'] == 1
 
     @patch('nckvsclient.KVSClient._request')
     def test_set(self, _request, client, system_param):
@@ -53,8 +60,8 @@ class TestKVSClient(object):
             'system': system_param,
             'query': {
                 'datalist': [{'key1': 'value1'}],
-                'datatypename': 'commonstest1',
-                'datatypeversion': 1
+                'datatypename': 'testtype',
+                'datatypeversion': 2
             }
         })
 
@@ -64,7 +71,7 @@ class TestKVSClient(object):
         assert _request.call_args == call(BASE_URL + '/data/search/', {
             'system': system_param,
             'query': {
-                'datatypename': 'commonstest1',
+                'datatypename': 'testtype',
                 'dataversion': '*',
                 'limit': 0,
                 'sortorder': [],
