@@ -23,6 +23,10 @@ class RPCError(Exception):
         return 'RPCError: {} {}'.format(self.code, self.message)
 
 
+def as_list(text):
+    return [x.strip() for x in text.split(',')]
+
+
 class KVSClient(object):
     def __init__(self, base_url, login_name, login_pass, datatypename,
                  datatypeversion=1, **kwargs):
@@ -32,6 +36,7 @@ class KVSClient(object):
                            datatypename=datatypename,
                            datatypeversion=datatypeversion,
                            **kwargs)
+        self.config['json_items'] = self.config.get('json_items', [])
         self.system_param = {}
 
         for key in ('login_name', 'login_pass', 'app_servername',
@@ -43,7 +48,11 @@ class KVSClient(object):
         parser = ConfigParser()
         parser.read(filename)
         config = dict(parser.items(section))
+
         config['datatypeversion'] = int(config.get('datatypeversion', '1'))
+        if config.get('json_items'):
+            config['json_items'] = as_list(config['json_items'])
+
         return cls(**config)
 
     def set(self, items):
@@ -73,7 +82,7 @@ class KVSClient(object):
         return self._request(url, param)
 
     def _request(self, url, param):
-        data = json.dumps(param, ensure_ascii=False)
+        data = self._jsonify(param)
         headers = {
             'Content-type': 'application/json',
             'Content-length': len(data)
@@ -84,3 +93,12 @@ class KVSClient(object):
             if result['code'] == '200':
                 return result
             raise RPCError(result['code'], result['message'])
+
+    def _jsonify(self, param):
+        result = {}
+        for key, value in param.items():
+            if key in self.config['json_items']:
+                value = json.dumps(value, ensure_ascii=False)
+            result[key] = value
+
+        return json.dumps(result, ensure_ascii=False)

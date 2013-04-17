@@ -34,7 +34,8 @@ def pytest_funcarg__system_param(request):
 def pytest_funcarg__client(request):
     return nckvs.KVSClient(BASE_URL, 'user', 'pass', 'testtype',
                            datatypeversion=2, app_servername='appname',
-                           app_username='appuser', timezone='')
+                           app_username='appuser', timezone='',
+                           json_items=['list'])
 
 
 class TestKVSClient(object):
@@ -47,7 +48,8 @@ class TestKVSClient(object):
             'app_username': 'appuser',
             'timezone': '',
             'datatypename': 'testtype',
-            'datatypeversion': 2
+            'datatypeversion': 2,
+            'json_items': ['list']
         }
         assert client.system_param == system_param
 
@@ -66,13 +68,15 @@ class TestKVSClient(object):
             'app_username': 'appuser',
             'timezone': '',
             'datatypename': 'testtype',
-            'datatypeversion': 1
+            'datatypeversion': 1,
+            'json_items': []
         }
 
     def test_from_file2(self):
         filename = os.path.join(DATA_DIR, 'config.test.ini')
         client = nckvs.KVSClient.from_file(filename, 'other')
         assert client.config['datatypeversion'] == 2
+        assert client.config['json_items'] == ['list', 'dict']
 
     @patch('nckvsclient.KVSClient._request')
     def test_set(self, _request, client, system_param):
@@ -130,3 +134,8 @@ class TestKVSClient(object):
         client._request(BASE_URL, {'key': '日本語'})
         req = urlopen.call_args[0][0]
         assert req.data == '{"key": "日本語"}'
+
+    def test_jsonify(self, client):
+        param = {'normal': 'value', 'list': ['v1', '日本語']}
+        data = client._jsonify(param)
+        assert r'"list": "[\"v1\", \"日本語\"]"' in data
