@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 import pytest
 from mock import patch, call
 
@@ -15,8 +17,8 @@ try:
 except ImportError:
     from io import StringIO
 
-
 BASE_URL = 'http://example.com'
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 
 def pytest_funcarg__system_param(request):
@@ -52,6 +54,25 @@ class TestKVSClient(object):
     def test_init2(self):
         client = nckvs.KVSClient(BASE_URL, 'user', 'pass', 'testtype')
         assert client.config['datatypeversion'] == 1
+
+    def test_from_file(self):
+        filename = os.path.join(DATA_DIR, 'config.test.ini')
+        client = nckvs.KVSClient.from_file(filename)
+        assert client.config == {
+            'base_url': 'http://example.com/weatherinfo/nckvsrpc/api/rest',
+            'login_name': 'user',
+            'login_pass': 'pass',
+            'app_servername': 'appname',
+            'app_username': 'appuser',
+            'timezone': '',
+            'datatypename': 'testtype',
+            'datatypeversion': 1
+        }
+
+    def test_from_file2(self):
+        filename = os.path.join(DATA_DIR, 'config.test.ini')
+        client = nckvs.KVSClient.from_file(filename, 'other')
+        assert client.config['datatypeversion'] == 2
 
     @patch('nckvsclient.KVSClient._request')
     def test_set(self, _request, client, system_param):

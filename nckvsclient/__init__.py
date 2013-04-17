@@ -8,6 +8,11 @@ try:
 except ImportError:
     import urllib2 as request
 
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser as ConfigParser
+
 
 class RPCError(Exception):
     def __init__(self, code, message):
@@ -32,6 +37,14 @@ class KVSClient(object):
         for key in ('login_name', 'login_pass', 'app_servername',
                     'app_username', 'timezone'):
             self.system_param[key] = self.config.get(key, '')
+
+    @classmethod
+    def from_file(cls, filename, section='nckvs'):
+        parser = ConfigParser()
+        parser.read(filename)
+        config = dict(parser.items(section))
+        config['datatypeversion'] = int(config.get('datatypeversion', '1'))
+        return cls(**config)
 
     def set(self, items):
         url = self.config['base_url'] + '/data/set/'
