@@ -73,7 +73,7 @@ class KVSClient(object):
         return self._request(url, param)
 
     def _request(self, url, param):
-        data = json.dumps(param)
+        data = json.dumps(param, ensure_ascii=False)
         headers = {
             'Content-type': 'application/json',
             'Content-length': len(data)

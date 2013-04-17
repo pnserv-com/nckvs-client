@@ -123,3 +123,10 @@ class TestKVSClient(object):
                 assert e.message == 'invalid'
                 assert str(e) == 'RPCError: 400 invalid'
                 raise
+
+    @patch.object(request, 'urlopen')
+    def test_request_multibyte(self, urlopen, client):
+        urlopen.return_value = StringIO('{"code":"200"}')
+        client._request(BASE_URL, {'key': '日本語'})
+        req = urlopen.call_args[0][0]
+        assert req.data == '{"key": "日本語"}'
