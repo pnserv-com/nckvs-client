@@ -89,10 +89,7 @@ class KVSClient(object):
         }
         req = request.Request(url, data, headers)
         with closing(request.urlopen(req)) as res:
-            result = json.load(res)
-            if result['code'] == '200':
-                return result
-            raise RPCError(result['code'], result['message'])
+            return self._parse_response(res.read())
 
     def _jsonify(self, param):
         result = {}
@@ -102,3 +99,20 @@ class KVSClient(object):
             result[key] = value
 
         return json.dumps(result, ensure_ascii=False)
+
+    def _parse_response(self, response):
+        result = json.loads(response)
+        if result['code'] != '200':
+            raise RPCError(result['code'], result['message'])
+
+        result['datalist'] = [self._parse(x) for x in result['datalist']]
+        return result
+
+    def _parse(self, data):
+        result = {}
+        for key, value in data.items():
+            if key in self.config['json_items']:
+                value = json.loads(value)
+            result[key] = value
+
+        return result

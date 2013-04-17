@@ -106,9 +106,9 @@ class TestKVSClient(object):
 
     @patch.object(request, 'urlopen')
     def test_request(self, urlopen, client):
-        urlopen.return_value = StringIO('{"code":"200"}')
+        urlopen.return_value = StringIO('{"code":"200","datalist":[]}')
         res = client._request(BASE_URL, {'key': 'value'})
-        assert res == {'code': '200'}
+        assert res == {'code': '200', 'datalist': []}
         req = urlopen.call_args[0][0]
         assert req.data == '{"key": "value"}'
         assert req.headers == {
@@ -117,20 +117,8 @@ class TestKVSClient(object):
         }
 
     @patch.object(request, 'urlopen')
-    def test_request_error(self, urlopen, client):
-        urlopen.return_value = StringIO('{"code":"400","message":"invalid"}')
-        with pytest.raises(nckvs.RPCError):
-            try:
-                client._request(BASE_URL, {'key': 'value'})
-            except nckvs.RPCError as e:
-                assert e.code == '400'
-                assert e.message == 'invalid'
-                assert str(e) == 'RPCError: 400 invalid'
-                raise
-
-    @patch.object(request, 'urlopen')
     def test_request_multibyte(self, urlopen, client):
-        urlopen.return_value = StringIO('{"code":"200"}')
+        urlopen.return_value = StringIO('{"code":"200","datalist":[]}')
         client._request(BASE_URL, {'key': '日本語'})
         req = urlopen.call_args[0][0]
         assert req.data == '{"key": "日本語"}'
@@ -139,3 +127,25 @@ class TestKVSClient(object):
         param = {'normal': 'value', 'list': ['v1', '日本語']}
         data = client._jsonify(param)
         assert r'"list": "[\"v1\", \"日本語\"]"' in data
+
+    def test_error_response(self, client):
+        res = '{"code":"400","message":"invalid"}'
+        with pytest.raises(nckvs.RPCError):
+            try:
+                client._parse_response(res)
+            except nckvs.RPCError as e:
+                assert e.code == '400'
+                assert e.message == 'invalid'
+                assert str(e) == 'RPCError: 400 invalid'
+                raise
+
+    def test_parse_result(self, client):
+        res = (r'{"code":"200","datalist":['
+               r'{"k1":"v1","list":"[\"v2\",\"v3\"]"},'
+               r'{"k4":"v4","list":"[\"v5\",\"v6\"]"}]}')
+        assert client._parse_response(res) == {
+            'code': '200', 'datalist': [
+                {'k1': 'v1', 'list': ['v2', 'v3']},
+                {'k4': 'v4', 'list': ['v5', 'v6']}
+            ]
+        }
