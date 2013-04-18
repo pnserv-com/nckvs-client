@@ -81,6 +81,18 @@ class KVSClient(object):
         }
         return self._request(url, param)
 
+    def delete(self, idlist):
+        url = self.config['base_url'] + '/data/delete/'
+        param = {
+            'system': self.system_param,
+            'query': {
+                'datatypename': self.config['datatypename'],
+                'datatypeversion': self.config['datatypeversion'],
+                'idlist': idlist
+            }
+        }
+        return self._request(url, param)
+
     def _request(self, url, param):
         data = self._jsonify(param)
         headers = {

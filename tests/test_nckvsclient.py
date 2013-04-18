@@ -104,6 +104,18 @@ class TestKVSClient(object):
             }
         })
 
+    @patch('nckvsclient.KVSClient._request')
+    def test_delete(self, _request, client, system_param):
+        client.delete([1, 2])
+        assert _request.call_args == call(BASE_URL + '/data/delete/', {
+            'system': system_param,
+            'query': {
+                'datatypename': 'testtype',
+                'datatypeversion': 2,
+                'idlist': [1, 2]
+            }
+        })
+
     @patch.object(request, 'urlopen')
     def test_request(self, urlopen, client):
         urlopen.return_value = StringIO('{"code":"200","datalist":[]}')
