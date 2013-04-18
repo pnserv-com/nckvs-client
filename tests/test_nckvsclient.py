@@ -34,8 +34,7 @@ def pytest_funcarg__system_param(request):
 def pytest_funcarg__client(request):
     return nckvs.KVSClient(BASE_URL, 'user', 'pass', 'testtype',
                            datatypeversion=2, app_servername='appname',
-                           app_username='appuser', timezone='',
-                           json_items=['list'])
+                           app_username='appuser', timezone='')
 
 
 class TestKVSClient(object):
@@ -48,8 +47,7 @@ class TestKVSClient(object):
             'app_username': 'appuser',
             'timezone': '',
             'datatypename': 'testtype',
-            'datatypeversion': 2,
-            'json_items': ['list']
+            'datatypeversion': 2
         }
         assert client.system_param == system_param
 
@@ -68,15 +66,13 @@ class TestKVSClient(object):
             'app_username': 'appuser',
             'timezone': '',
             'datatypename': 'testtype',
-            'datatypeversion': 1,
-            'json_items': []
+            'datatypeversion': 1
         }
 
     def test_from_file2(self):
         filename = os.path.join(DATA_DIR, 'config.test.ini')
         client = nckvs.KVSClient.from_file(filename, 'other')
         assert client.config['datatypeversion'] == 2
-        assert client.config['json_items'] == ['list', 'dict']
 
     @patch('nckvsclient.KVSClient._request')
     def test_set(self, _request, client, system_param):
@@ -89,6 +85,16 @@ class TestKVSClient(object):
                 'datatypeversion': 2
             }
         })
+
+    @patch.object(request, 'urlopen')
+    def test_set_request(self, urlopen, client):
+        urlopen.return_value = StringIO('{"code":"200"}')
+        d = {'id': '-1', 'key': '日本語', 'list': [1, 2], 'hash': {'k': 'v'}}
+        client.set([d])
+        req = urlopen.call_args[0][0]
+        assert '"query": {"datalist": [{' in req.data
+        assert r'"hash": "{\"k\": \"v\"}"' in req.data
+        assert '"list": "[1, 2]"' in req.data
 
     @patch('nckvsclient.KVSClient._request')
     def test_search(self, _request, client, system_param):
@@ -134,11 +140,6 @@ class TestKVSClient(object):
         client._request(BASE_URL, {'key': '日本語'})
         req = urlopen.call_args[0][0]
         assert req.data == '{"key": "日本語"}'
-
-    def test_jsonify(self, client):
-        param = {'normal': 'value', 'list': ['v1', '日本語']}
-        data = client._jsonify(param)
-        assert r'"list": "[\"v1\", \"日本語\"]"' in data
 
     def test_error_response(self, client):
         res = '{"code":"400","message":"invalid"}'

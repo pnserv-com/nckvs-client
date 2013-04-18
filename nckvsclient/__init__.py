@@ -23,10 +23,6 @@ class RPCError(Exception):
         return 'RPCError: {} {}'.format(self.code, self.message)
 
 
-def as_list(text):
-    return [x.strip() for x in text.split(',')]
-
-
 class KVSClient(object):
     def __init__(self, base_url, login_name, login_pass, datatypename,
                  datatypeversion=1, **kwargs):
@@ -36,7 +32,6 @@ class KVSClient(object):
                            datatypename=datatypename,
                            datatypeversion=datatypeversion,
                            **kwargs)
-        self.config['json_items'] = self.config.get('json_items', [])
         self.system_param = {}
 
         for key in ('login_name', 'login_pass', 'app_servername',
@@ -48,10 +43,7 @@ class KVSClient(object):
         parser = ConfigParser()
         parser.read(filename)
         config = dict(parser.items(section))
-
         config['datatypeversion'] = int(config.get('datatypeversion', '1'))
-        if config.get('json_items'):
-            config['json_items'] = as_list(config['json_items'])
 
         return cls(**config)
 
@@ -60,7 +52,7 @@ class KVSClient(object):
         param = {
             'system': self.system_param,
             'query': {
-                'datalist': items,
+                'datalist': [self._flatten(x) for x in items],
                 'datatypename': self.config['datatypename'],
                 'datatypeversion': self.config['datatypeversion']
             }
@@ -94,7 +86,7 @@ class KVSClient(object):
         return self._request(url, param)
 
     def _request(self, url, param):
-        data = self._jsonify(param)
+        data = json.dumps(param, ensure_ascii=False)
         headers = {
             'Content-type': 'application/json',
             'Content-length': len(data)
@@ -103,14 +95,14 @@ class KVSClient(object):
         with closing(request.urlopen(req)) as res:
             return self._parse_response(res.read())
 
-    def _jsonify(self, param):
+    def _flatten(self, item):
         result = {}
-        for key, value in param.items():
-            if key in self.config['json_items']:
+        for key, value in item.items():
+            if type(value) in (list, dict):
                 value = json.dumps(value, ensure_ascii=False)
             result[key] = value
 
-        return json.dumps(result, ensure_ascii=False)
+        return result
 
     def _parse_response(self, response):
         result = json.loads(response)
@@ -125,8 +117,9 @@ class KVSClient(object):
     def _parse(self, data):
         result = {}
         for key, value in data.items():
-            if key in self.config['json_items']:
-                value = json.loads(value)
-            result[key] = value
+            try:
+                result[key] = json.loads(value)
+            except ValueError:
+                result[key] = value
 
         return result
