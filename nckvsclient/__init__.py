@@ -105,7 +105,9 @@ class KVSClient(object):
         if result['code'] != '200':
             raise RPCError(result['code'], result['message'])
 
-        result['datalist'] = [self._parse(x) for x in result['datalist']]
+        if 'datalist' in result:
+            result['datalist'] = [self._parse(x) for x in result['datalist']]
+
         return result
 
     def _parse(self, data):
