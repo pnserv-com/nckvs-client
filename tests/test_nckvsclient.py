@@ -154,11 +154,11 @@ class TestKVSClient(object):
 
     def test_parse_result(self, client):
         res = (r'{"code":"200","datalist":['
-               r'{"k1":"v1","list":"[\"v2\",\"v3\"]"},'
+               r'{"k1":"v1","list":"[\"v2\",\"v3\"]","num":1},'
                r'{"k4":"v4","list":"[\"v5\",\"v6\"]"}]}')
         assert client._parse_response(res) == {
             'code': '200', 'datalist': [
-                {'k1': 'v1', 'list': ['v2', 'v3']},
+                {'k1': 'v1', 'list': ['v2', 'v3'], 'num': 1},
                 {'k4': 'v4', 'list': ['v5', 'v6']}
             ]
         }

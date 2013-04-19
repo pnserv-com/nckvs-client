@@ -119,7 +119,7 @@ class KVSClient(object):
         for key, value in data.items():
             try:
                 result[key] = json.loads(value)
-            except ValueError:
+            except (ValueError, TypeError):
                 result[key] = value
 
         return result
