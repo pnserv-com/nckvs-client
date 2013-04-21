@@ -122,6 +122,36 @@ class TestKVSClient(object):
             }
         })
 
+    @patch('nckvsclient.KVSClient.set')
+    @patch('nckvsclient.KVSClient.search')
+    def test_upsert(self, search, set_, client, system_param):
+        item = {'doc_id': '0001', 'rev': '1', 'value': 'first'}
+
+        search.return_value = {'datalist': []}
+        client.upsert(item, 'doc_id')
+        assert search.call_args == call([{
+            'key': 'doc_id', 'value': '0001', 'pattern': 'cmp'
+        }])
+        assert set_.call_args == call([dict(id='-1', **item)])
+
+        search.return_value = {'datalist': [dict(id='1', **item)]}
+        client.upsert(item, 'doc_id')
+        assert set_.call_args == call([dict(id='1', **item)])
+
+        client.upsert(item, 'doc_id', 'fcmp')
+        assert search.call_args == call([{
+            'key': 'doc_id', 'value': '0001', 'pattern': 'fcmp'
+        }])
+
+        set_.reset_mock()
+        client.upsert(item, 'doc_id', cmp=lambda x, y: False)
+        assert set_.call_count == 0
+
+        search.return_value = {'datalist': [dict(id='1', **item),
+                                            dict(id='2', **item)]}
+        with pytest.raises(nckvs.NotUniqueError):
+            client.upsert(item, 'doc_id')
+
     @patch.object(request, 'urlopen')
     def test_request(self, urlopen, client):
         urlopen.return_value = StringIO('{"code":"200","datalist":[]}')

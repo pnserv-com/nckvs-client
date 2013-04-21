@@ -23,6 +23,10 @@ class RPCError(Exception):
         return 'RPCError: {} {}'.format(self.code, self.message)
 
 
+class NotUniqueError(Exception):
+    pass
+
+
 class KVSClient(object):
     def __init__(self, base_url, login_name, login_pass, datatypename,
                  datatypeversion=1, **kwargs):
@@ -84,6 +88,25 @@ class KVSClient(object):
             }
         }
         return self._request(url, param)
+
+    def upsert(self, item, key, pattern='cmp', cmp=None):
+        item = dict(item)
+        cmp = cmp or (lambda x, y: True)
+
+        matches = self.search([{
+            'key': key, 'value': item[key], 'pattern': pattern
+        }])['datalist']
+
+        if not matches:
+            item['id'] = '-1'
+        elif len(matches) != 1:
+            raise NotUniqueError
+        elif cmp(matches[0], item):
+            item['id'] = matches[0]['id']
+        else:
+            return
+
+        return self.set([item])
 
     def _request(self, url, param):
         data = json.dumps(param, ensure_ascii=False)
