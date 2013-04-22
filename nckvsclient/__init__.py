@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import json
 from contextlib import closing
 
@@ -25,6 +26,12 @@ class RPCError(Exception):
 
 class NotUniqueError(Exception):
     pass
+
+
+def _utf8(s):
+    if sys.version_info < (3, 0) and isinstance(s, unicode):
+        return s.encode('utf-8')
+    return s
 
 
 class KVSClient(object):
@@ -109,10 +116,7 @@ class KVSClient(object):
         return self.set([item])
 
     def _request(self, url, param):
-        data = json.dumps(param, ensure_ascii=False)
-        if isinstance(data, unicode):
-            data = data.encode('utf-8')
-
+        data = _utf8(json.dumps(param, ensure_ascii=False))
         headers = {
             'Content-type': 'application/json',
             'Content-length': len(data)
