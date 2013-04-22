@@ -128,7 +128,7 @@ class KVSClient(object):
     def _flatten(self, item):
         result = {}
         for key, value in item.items():
-            if type(value) in (list, dict):
+            if isinstance(value, list) or isinstance(value, dict):
                 value = json.dumps(value, ensure_ascii=False)
             result[key] = value
 

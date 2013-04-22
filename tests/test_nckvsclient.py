@@ -88,13 +88,18 @@ class TestKVSClient(object):
 
     @patch.object(request, 'urlopen')
     def test_set_request(self, urlopen, client):
+        class CustomDict(dict):
+            pass
+
         urlopen.return_value = StringIO('{"code":"200"}')
-        d = {'id': '-1', 'key': u'日本語', 'list': [1, 2], 'hash': {'k': u'あ'}}
+        d = {'id': '-1', 'key': u'日本語', 'list': [1, 2], 'hash': {'k': u'あ'},
+             'cdict': CustomDict(a=1)}
         client.set([d])
         req = urlopen.call_args[0][0]
         assert '"datalist": [{' in req.data
         assert r'"hash": "{\"k\": \"あ\"}"' in req.data
         assert '"list": "[1, 2]"' in req.data
+        assert r'"cdict": "{\"a\": 1}"' in req.data
 
     @patch('nckvsclient.KVSClient._request')
     def test_search(self, _request, client, system_param):
