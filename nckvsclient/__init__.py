@@ -110,6 +110,9 @@ class KVSClient(object):
 
     def _request(self, url, param):
         data = json.dumps(param, ensure_ascii=False)
+        if isinstance(data, unicode):
+            data = data.encode('utf-8')
+
         headers = {
             'Content-type': 'application/json',
             'Content-length': len(data)

@@ -89,11 +89,11 @@ class TestKVSClient(object):
     @patch.object(request, 'urlopen')
     def test_set_request(self, urlopen, client):
         urlopen.return_value = StringIO('{"code":"200"}')
-        d = {'id': '-1', 'key': '日本語', 'list': [1, 2], 'hash': {'k': 'v'}}
+        d = {'id': '-1', 'key': u'日本語', 'list': [1, 2], 'hash': {'k': u'あ'}}
         client.set([d])
         req = urlopen.call_args[0][0]
         assert '"query": {"datalist": [{' in req.data
-        assert r'"hash": "{\"k\": \"v\"}"' in req.data
+        assert r'"hash": "{\"k\": \"あ\"}"' in req.data
         assert '"list": "[1, 2]"' in req.data
 
     @patch('nckvsclient.KVSClient._request')
