@@ -46,7 +46,7 @@ class KVSClient(object):
         self.system_param = {}
 
         for key in ('login_name', 'login_pass', 'app_servername',
-                    'app_username', 'timezone'):
+                    'app_username', 'timezone', 'use_rawdata'):
             self.system_param[key] = self.config.get(key, '')
 
     @classmethod

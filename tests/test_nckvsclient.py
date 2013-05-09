@@ -27,7 +27,8 @@ def pytest_funcarg__system_param(request):
         'login_pass': 'pass',
         'app_servername': 'appname',
         'app_username': 'appuser',
-        'timezone': ''
+        'timezone': '',
+        'use_rawdata': ''
     }
 
 
@@ -66,8 +67,10 @@ class TestKVSClient(object):
             'app_username': 'appuser',
             'timezone': '',
             'datatypename': 'testtype',
-            'datatypeversion': 1
+            'datatypeversion': 1,
+            'use_rawdata': '1'
         }
+        assert client.system_param['use_rawdata'] == '1'
 
     def test_from_file2(self):
         filename = os.path.join(DATA_DIR, 'config.test.ini')
